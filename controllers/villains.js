@@ -1,39 +1,47 @@
 const models = require('../models')
 
 const getAllVillains = async (request, response) => {
-  const dbVillains = await models.Villains.findAll()
+  try {
+    const dbVillains = await models.Villains.findAll({ attributes: ['name', 'movie', 'slug'] })
 
-  return response.send(dbVillains.map(dbVillainToGetModel))
+    return response.send(dbVillains)
+  } catch (error) {
+    return response.status(500).send('Unable to retrieve data, please try again')
+  }
 }
 
 const getVillainBySlug = async (request, response) => {
-  const { slug } = request.params
+  try {
+    const { slug } = request.params
 
-  const dbVillainSlug = await models.Villains.findOne({ where: { slug } })
+    const dbVillainSlug = await models.Villains.findOne({
+      attributes: ['name', 'movie', 'slug'],
+      where: { slug: slug },
+    })
 
-  if (dbVillainSlug) {
-    return response.send(dbVillainToGetModel(dbVillainSlug))
+    return dbVillainSlug
+      ? response.send(dbVillainSlug)
+      : response.sendStatus(404)
+  } catch (error) {
+    return response.status(500).send('Unable to retreive villain, please try again')
   }
-
-  return response.sendStatus(404)
 }
 
 const addNewVillain = async (request, response) => {
-  const { name, movie, slug } = request.body
+  try {
+    const { name, movie, slug } = request.body
 
-  if (!name || !movie || !slug) {
-    return response.sendStatus(404)
+    if (!name || !movie || !slug) {
+      return response.sendStatus(404)
+    }
+    const newVillain = await models.Villains.create({ name, movie, slug })
+
+    return response.status(201).send(newVillain)
+  } catch (error) {
+    return response.status(500).send('Unable to add villain. Please try again')
   }
-  const newVillain = await models.Villains.create({ name, movie, slug })
-
-  return response.status(201).send(newVillain)
 }
 
-const dbVillainToGetModel = (dbVillain) => ({
-  name: dbVillain.name,
-  movie: dbVillain.movie,
-  slug: dbVillain.slug
-})
 
 
 module.exports = { getAllVillains, getVillainBySlug, addNewVillain }
